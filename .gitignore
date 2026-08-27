@@ -9,3 +9,12 @@ tsconfig.tsbuildinfo
 private/
 .replit
 replit.nix
+
+# Open Publish: fetched from your bucket on every build, never committed.
+content/*
+!content/.gitkeep
+.op-build-state.json
+
+# Note: op-site.ts is regenerated on every build and is NOT ignored. The
+# default copy is committed on purpose, as the fallback for a build that
+# runs before anything has been published.
