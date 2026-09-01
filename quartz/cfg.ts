@@ -70,6 +70,8 @@ export interface GlobalConfiguration {
    * Region Codes: https://en.wikipedia.org/wiki/ISO_3166-1_alpha-2
    */
   locale: ValidLocale
+  /** Reading direction, from the published snapshot. Added by Open Publish. */
+  dir: 'ltr' | 'rtl'
 }
 
 export interface QuartzConfig {

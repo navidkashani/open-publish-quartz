@@ -1,68 +1,57 @@
-import { PageLayout, SharedLayout } from "./quartz/cfg"
-import * as Component from "./quartz/components"
+import { PageLayout, SharedLayout } from './quartz/cfg'
+import * as Component from './quartz/components'
+import { site } from './op-site'
 
-// components shared across all pages
+/**
+ * Layout, driven by the site options set in Obsidian.
+ *
+ * Each toggle in the plugin's settings maps to a component here. Because the
+ * options are part of the snapshot ID, flipping one produces a new snapshot and
+ * therefore a rebuild, even when no note changed.
+ */
+
+const optional = <T>(enabled: boolean, component: T): T[] => (enabled ? [component] : [])
+
 export const sharedPageComponents: SharedLayout = {
   head: Component.Head(),
   header: [],
   afterBody: [],
   footer: Component.Footer({
     links: {
-      GitHub: "https://github.com/jackyzha0/quartz",
-      "Discord Community": "https://discord.gg/cRFFHYye7t",
+      'Published with Open Publish': 'https://github.com/navidkashani/open-publish',
     },
   }),
 }
 
-// components for pages that display a single page (e.g. a single note)
 export const defaultContentPageLayout: PageLayout = {
   beforeBody: [
-    Component.ConditionalRender({
-      component: Component.Breadcrumbs(),
-      condition: (page) => page.fileData.slug !== "index",
-    }),
+    Component.Breadcrumbs(),
     Component.ArticleTitle(),
     Component.ContentMeta(),
-    Component.TagList(),
+    ...optional(site.showTags, Component.TagList()),
   ],
   left: [
     Component.PageTitle(),
     Component.MobileOnly(Component.Spacer()),
-    Component.Flex({
-      components: [
-        {
-          Component: Component.Search(),
-          grow: true,
-        },
-        { Component: Component.Darkmode() },
-        { Component: Component.ReaderMode() },
-      ],
-    }),
-    Component.Explorer(),
+    ...optional(site.showSearch, Component.Search()),
+    ...optional(site.showThemeToggle, Component.Darkmode()),
+    ...optional(site.showGraph, Component.DesktopOnly(Component.Graph())),
+    ...optional(site.showNavigation, Component.DesktopOnly(Component.Explorer())),
   ],
   right: [
-    Component.Graph(),
-    Component.DesktopOnly(Component.TableOfContents()),
-    Component.Backlinks(),
+    ...optional(site.showOutline, Component.DesktopOnly(Component.TableOfContents())),
+    ...optional(site.showBacklinks, Component.Backlinks()),
   ],
 }
 
-// components for pages that display lists of pages  (e.g. tags or folders)
 export const defaultListPageLayout: PageLayout = {
   beforeBody: [Component.Breadcrumbs(), Component.ArticleTitle(), Component.ContentMeta()],
   left: [
     Component.PageTitle(),
     Component.MobileOnly(Component.Spacer()),
-    Component.Flex({
-      components: [
-        {
-          Component: Component.Search(),
-          grow: true,
-        },
-        { Component: Component.Darkmode() },
-      ],
-    }),
-    Component.Explorer(),
+    ...optional(site.showSearch, Component.Search()),
+    ...optional(site.showThemeToggle, Component.Darkmode()),
+    ...optional(site.showNavigation, Component.DesktopOnly(Component.Explorer())),
   ],
   right: [],
 }
