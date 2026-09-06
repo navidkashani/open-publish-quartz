@@ -3,6 +3,9 @@
 @use "./variables.scss" as *;
 @use "./syntax.scss";
 @use "./callouts.scss";
+// Open Publish: mirrors the physical properties that `dir="rtl"` alone
+// cannot flip. Inert on a left-to-right site.
+@use "../../styles/op-rtl.scss";
 
 html {
   scroll-behavior: smooth;

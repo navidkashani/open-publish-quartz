@@ -1,68 +1,92 @@
-import { PageLayout, SharedLayout } from "./quartz/cfg"
-import * as Component from "./quartz/components"
+import { PageLayout, SharedLayout } from './quartz/cfg'
+import * as Component from './quartz/components'
+import { site } from './op-site'
+import { navExplorerOptions } from './nav-sort'
 
-// components shared across all pages
+/**
+ * Layout, driven by the site options set in Obsidian.
+ *
+ * Each toggle in the plugin's settings maps to a component here. Because the
+ * options are part of the snapshot ID, flipping one produces a new snapshot and
+ * therefore a rebuild, even when no note changed.
+ */
+
+const optional = <T>(enabled: boolean, component: T): T[] => (enabled ? [component] : [])
+
+/**
+ * The explorer, arranged if anybody arranged it.
+ *
+ * Built once and used by both layouts so the two cannot drift apart, and called
+ * rather than shared as a value because each layout needs its own component
+ * instance. `navExplorerOptions` returns undefined when the snapshot carries no
+ * navigation and no folder names, and `Explorer(undefined)` is the same call as
+ * `Explorer()`: a site nobody has arranged, whose folders are already named
+ * after their own addresses, renders byte for byte what it always did.
+ */
+const explorer = () => Component.Explorer(navExplorerOptions(site.nav, site.folders))
+
 export const sharedPageComponents: SharedLayout = {
   head: Component.Head(),
   header: [],
   afterBody: [],
   footer: Component.Footer({
     links: {
-      GitHub: "https://github.com/jackyzha0/quartz",
-      "Discord Community": "https://discord.gg/cRFFHYye7t",
+      'Published with Open Publish': 'https://github.com/navidkashani/open-publish',
     },
   }),
 }
 
-// components for pages that display a single page (e.g. a single note)
+/**
+ * `ContentMeta` is Quartz's page-metadata block: the reading time and the
+ * modified date under the title. `showPageMetadata` off drops it rather than
+ * hiding it, so nothing is rendered and then styled away.
+ *
+ * `showPrevNext` has no component to map onto here: Quartz ships no
+ * previous/next control. Ignoring an option a generator cannot express is what
+ * `docs/architecture.md` says to do with one, and it stays in the snapshot for
+ * the starter that can.
+ *
+ * `showInlineTitle` is the opposite case: one option, two layouts, and the same
+ * component in both. It is honoured here and deliberately not in the list layout
+ * below. Obsidian Publish, where the option comes from, has no folder or tag
+ * pages, so "hide inline title" never meant them; here `ArticleTitle` is the
+ * only thing naming a folder listing, a tag index or the 404 page, and dropping
+ * it leaves a heading-less page above a bare list. Mapping the intent onto the
+ * pages it was about is the starter's job, per `docs/architecture.md`.
+ */
 export const defaultContentPageLayout: PageLayout = {
   beforeBody: [
-    Component.ConditionalRender({
-      component: Component.Breadcrumbs(),
-      condition: (page) => page.fileData.slug !== "index",
-    }),
-    Component.ArticleTitle(),
-    Component.ContentMeta(),
-    Component.TagList(),
+    Component.Breadcrumbs(),
+    ...optional(site.showInlineTitle, Component.ArticleTitle()),
+    ...optional(site.showPageMetadata, Component.ContentMeta()),
+    ...optional(site.showTags, Component.TagList()),
   ],
   left: [
     Component.PageTitle(),
     Component.MobileOnly(Component.Spacer()),
-    Component.Flex({
-      components: [
-        {
-          Component: Component.Search(),
-          grow: true,
-        },
-        { Component: Component.Darkmode() },
-        { Component: Component.ReaderMode() },
-      ],
-    }),
-    Component.Explorer(),
+    ...optional(site.showSearch, Component.Search()),
+    ...optional(site.showThemeToggle, Component.Darkmode()),
+    ...optional(site.showGraph, Component.DesktopOnly(Component.Graph())),
+    ...optional(site.showNavigation, Component.DesktopOnly(explorer())),
   ],
   right: [
-    Component.Graph(),
-    Component.DesktopOnly(Component.TableOfContents()),
-    Component.Backlinks(),
+    ...optional(site.showOutline, Component.DesktopOnly(Component.TableOfContents())),
+    ...optional(site.showBacklinks, Component.Backlinks()),
   ],
 }
 
-// components for pages that display lists of pages  (e.g. tags or folders)
 export const defaultListPageLayout: PageLayout = {
-  beforeBody: [Component.Breadcrumbs(), Component.ArticleTitle(), Component.ContentMeta()],
+  beforeBody: [
+    Component.Breadcrumbs(),
+    Component.ArticleTitle(),
+    ...optional(site.showPageMetadata, Component.ContentMeta()),
+  ],
   left: [
     Component.PageTitle(),
     Component.MobileOnly(Component.Spacer()),
-    Component.Flex({
-      components: [
-        {
-          Component: Component.Search(),
-          grow: true,
-        },
-        { Component: Component.Darkmode() },
-      ],
-    }),
-    Component.Explorer(),
+    ...optional(site.showSearch, Component.Search()),
+    ...optional(site.showThemeToggle, Component.Darkmode()),
+    ...optional(site.showNavigation, Component.DesktopOnly(explorer())),
   ],
   right: [],
 }
